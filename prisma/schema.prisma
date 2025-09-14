@@ -12,37 +12,41 @@ datasource db {
 
 // User model
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  role          String    @default("user")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  strategies    Strategy[]
-  assessments   Assessment[]
+  id             String        @id @default(cuid())
+  name           String?
+  email          String        @unique
+  emailVerified  DateTime?
+  image          String?
+  role           String        @default("user")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  accounts       Account[]
+  sessions       Session[]
+  strategies     Strategy[]
+  assessments    Assessment[]
+  tasks          Task[] // Add missing relation
+  projects       Project[] // Add missing relation
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 }
 
 // Account model for OAuth providers
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
-  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([provider, providerAccountId])
 }
@@ -69,15 +73,16 @@ model VerificationToken {
 
 // Organization model
 model Organization {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
-  slug        String      @unique
+  slug        String       @unique
   description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   users       User[]
   strategies  Strategy[]
   assessments Assessment[]
+  projects    Project[] // Add missing relation
 }
 
 // Strategy model
@@ -117,88 +122,88 @@ model Initiative {
 
 // Task model
 model Task {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  status      String     @default("todo")
-  priority    Int        @default(1)
-  dueDate     DateTime?
-  assigneeId  String?
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  status       String     @default("todo")
+  priority     Int        @default(1)
+  dueDate      DateTime?
+  assigneeId   String?
   initiativeId String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  assignee    User?      @relation(fields: [assigneeId], references: [id])
-  initiative  Initiative @relation(fields: [initiativeId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assignee     User?      @relation(fields: [assigneeId], references: [id])
+  initiative   Initiative @relation(fields: [initiativeId], references: [id])
 }
 
 // KPI model (Key Performance Indicator)
 model KPI {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
   currentValue Float?
   targetValue  Float?
-  unit        String?
-  strategyId  String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  strategy    Strategy  @relation(fields: [strategyId], references: [id])
+  unit         String?
+  strategyId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  strategy     Strategy @relation(fields: [strategyId], references: [id])
 }
 
 // Assessment model for maturity index
 model Assessment {
-  id             String       @id @default(cuid())
+  id             String               @id @default(cuid())
   title          String
   description    String?
-  type           String       @default("maturity")
+  type           String               @default("maturity")
   score          Float?
-  status         String       @default("draft")
+  status         String               @default("draft")
   ownerId        String
   organizationId String
   strategyId     String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  owner          User         @relation(fields: [ownerId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  strategy       Strategy?    @relation(fields: [strategyId], references: [id])
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  owner          User                 @relation(fields: [ownerId], references: [id])
+  organization   Organization         @relation(fields: [organizationId], references: [id])
+  strategy       Strategy?            @relation(fields: [strategyId], references: [id])
   categories     AssessmentCategory[]
 }
 
 // Assessment category model
 model AssessmentCategory {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  score       Float?
-  weight      Float      @default(1)
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  score        Float?
+  weight       Float      @default(1)
   assessmentId String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  assessment  Assessment @relation(fields: [assessmentId], references: [id])
-  questions   Question[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  questions    Question[]
 }
 
 // Question model for assessments
 model Question {
-  id                   String              @id @default(cuid())
+  id                   String             @id @default(cuid())
   text                 String
   description          String?
   assessmentCategoryId String
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  category             AssessmentCategory   @relation(fields: [assessmentCategoryId], references: [id])
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  category             AssessmentCategory @relation(fields: [assessmentCategoryId], references: [id])
   answers              QuestionAnswer[]
 }
 
 // Question answer model
 model QuestionAnswer {
-  id          String   @id @default(cuid())
-  text        String
-  value       Int
-  questionId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  question    Question @relation(fields: [questionId], references: [id])
+  id         String   @id @default(cuid())
+  text       String
+  value      Int
+  questionId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  question   Question @relation(fields: [questionId], references: [id])
 }
 
 // PMO Project model
@@ -234,14 +239,14 @@ model Milestone {
 
 // Resource model
 model Resource {
-  id          String   @id @default(cuid())
-  name        String
-  type        String
-  projectId   String
-  allocation  Float    @default(100)
-  startDate   DateTime
-  endDate     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  project     Project  @relation(fields: [projectId], references: [id])
+  id         String   @id @default(cuid())
+  name       String
+  type       String
+  projectId  String
+  allocation Float    @default(100)
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  project    Project  @relation(fields: [projectId], references: [id])
 }
