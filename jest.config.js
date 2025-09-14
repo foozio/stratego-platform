@@ -22,4 +22,5 @@ module.exports = {
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/styles/(.*)$': '<rootDir>/styles/$1',
   },
+  testEnvironment: 'jsdom',
 };

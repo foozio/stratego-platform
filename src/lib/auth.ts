@@ -7,6 +7,15 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Extend the default User type to include role
+interface UserWithRole {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -29,7 +38,7 @@ export const authOptions: NextAuthOptions = {
             name: "Admin User",
             email: "admin@example.com",
             role: "admin"
-          };
+          } as UserWithRole;
         }
         
         return null;
@@ -47,13 +56,13 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
+        token.role = (user as UserWithRole).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role;
+        (session.user as UserWithRole).role = token.role as string;
       }
       return session;
     },
