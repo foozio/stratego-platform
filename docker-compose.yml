@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15
+    container_name: stratego-db
+    restart: always
+    environment:
+      POSTGRES_USER: stratego
+      POSTGRES_PASSWORD: stratego
+      POSTGRES_DB: stratego
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - stratego-network
+
+  # Adminer for database management
+  adminer:
+    image: adminer
+    container_name: stratego-adminer
+    restart: always
+    ports:
+      - '8080:8080'
+    networks:
+      - stratego-network
+
+  # Next.js application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stratego-app
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://stratego:stratego@db:5432/stratego?schema=public
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      - db
+    networks:
+      - stratego-network
+
+volumes:
+  db_data:
+
+networks:
+  stratego-network:
+    driver: bridge

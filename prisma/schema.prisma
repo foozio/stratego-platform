@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  strategies    Strategy[]
+  assessments   Assessment[]
+}
+
+// Account model for OAuth providers
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+// Session model for NextAuth.js
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Verification token model for email verification
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Organization model
+model Organization {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  users       User[]
+  strategies  Strategy[]
+  assessments Assessment[]
+}
+
+// Strategy model
+model Strategy {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         String       @default("draft")
+  startDate      DateTime?
+  endDate        DateTime?
+  ownerId        String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  owner          User         @relation(fields: [ownerId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  initiatives    Initiative[]
+  kpis           KPI[]
+  assessments    Assessment[]
+}
+
+// Initiative model
+model Initiative {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("planned")
+  priority    Int       @default(1)
+  startDate   DateTime?
+  endDate     DateTime?
+  strategyId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  strategy    Strategy  @relation(fields: [strategyId], references: [id])
+  tasks       Task[]
+}
+
+// Task model
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      String     @default("todo")
+  priority    Int        @default(1)
+  dueDate     DateTime?
+  assigneeId  String?
+  initiativeId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  assignee    User?      @relation(fields: [assigneeId], references: [id])
+  initiative  Initiative @relation(fields: [initiativeId], references: [id])
+}
+
+// KPI model (Key Performance Indicator)
+model KPI {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  currentValue Float?
+  targetValue  Float?
+  unit        String?
+  strategyId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  strategy    Strategy  @relation(fields: [strategyId], references: [id])
+}
+
+// Assessment model for maturity index
+model Assessment {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  type           String       @default("maturity")
+  score          Float?
+  status         String       @default("draft")
+  ownerId        String
+  organizationId String
+  strategyId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  owner          User         @relation(fields: [ownerId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  strategy       Strategy?    @relation(fields: [strategyId], references: [id])
+  categories     AssessmentCategory[]
+}
+
+// Assessment category model
+model AssessmentCategory {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  score       Float?
+  weight      Float      @default(1)
+  assessmentId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  assessment  Assessment @relation(fields: [assessmentId], references: [id])
+  questions   Question[]
+}
+
+// Question model for assessments
+model Question {
+  id                   String              @id @default(cuid())
+  text                 String
+  description          String?
+  assessmentCategoryId String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  category             AssessmentCategory   @relation(fields: [assessmentCategoryId], references: [id])
+  answers              QuestionAnswer[]
+}
+
+// Question answer model
+model QuestionAnswer {
+  id          String   @id @default(cuid())
+  text        String
+  value       Int
+  questionId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  question    Question @relation(fields: [questionId], references: [id])
+}
+
+// PMO Project model
+model Project {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  status         String       @default("planned")
+  startDate      DateTime?
+  endDate        DateTime?
+  ownerId        String
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  owner          User         @relation(fields: [ownerId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  milestones     Milestone[]
+  resources      Resource[]
+}
+
+// Milestone model
+model Milestone {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime
+  status      String   @default("pending")
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+// Resource model
+model Resource {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  projectId   String
+  allocation  Float    @default(100)
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id])
+}
